@@ -4,4 +4,4 @@
 1第一步:平面直角坐标系下参数方程表示，和动能守恒，冲量定理推导出两个小球碰撞后的速度，碰撞时的位置，和所需要的时间
 2第二部：利用代码来表达碰撞过程
 
-<img src="https://github.com/x-spiders/aiss-spider/raw/master/assets/download.png?raw=true" alt="" style="max-width:100%;">
+
