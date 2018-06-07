@@ -1,9 +1,47 @@
-<!DOCTYPE html>
 <html>
 <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />  
+    <style type="text/css" media="screen">  
+    .button {
+    -moz-user-select: none;
+    background-color: hsl(0, 0%, 75%);
+    background-image: radial-gradient(ellipse farthest-corner at center top , rgba(255, 255, 255, 0.7) 0%, rgba(255, 255, 255, 0) 100%));
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    border-top: 1px solid rgba(255, 255, 255, 0.8);
+    box-shadow: 0 0.3em 0.3em rgba(255, 254, 255, 0.6) inset, 0 -0.1em 0.3em rgba(0, 0, 0, 0.15) inset, 0 0.1em 3px hsl(0, 0%, 60%), 0 0.3em 1px hsl(0, 0%, 45%), 0 0.5em 5px rgba(0, 0, 0, 0.2);
+    color: hsl(0, 0%, 40%);
+    display: inline-block;
+    font: bold 24px/1em "Droid Sans",sans-serif;
+    margin: 0.5em;
+    padding: 0.5em 0.6em 0.4em;
+    position: relative;
+    text-decoration: none;
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
+    transition: background 0.2s ease-in-out 0s;
+     }
+    </style> 
 	<title></title>
 </head>
 <body>
+<a href="#" class="button" onclick='test1()'>  
+ <span>四个临界碰撞的小球</span>  
+</a> 
+<a href="#" class="button" onclick='test2()'>  
+ <span>速度交换</span>  
+</a> 
+<a href="#" class="button" onclick='test3()'>  
+ <span>多个小球随机碰撞</span>  
+</a> 
+<a href="#" class="button" onclick='test4()'>  
+ <span>加尾巴</span>  
+</a> 
+<a href="#" class="button" onclick='test5()'>  
+ <span>去尾巴</span>  
+</a> 
+<a href="#" class="button" onclick='test6()'>  
+ <span>测试画蝌蚪</span>  
+</a> 
 <div id="canvas-wrap">
    <canvas id="canvas" style="border:1px solid #aaaaaa; display: block;margin:50px auto;">
    	your browser does not support canvas
@@ -11,18 +49,25 @@
 </div>
 </body>
 <script type="text/javascript">
-    var myCanvas = document.getElementById("canvas");
-    var context = myCanvas.getContext("2d");
+    var addLen = 0;
+    // var myCanvas = ;
+    // var context = myCanvas.getContext("2d");
     var colorList = [
      '#C1232B','#B5C334','#FCCE10','#E87C25','#27727B',
      '#FE8463','#9BCA63','#FAD860','#F3A43B','#60C0DD',
      '#D7504B','#C6E579','#F4E001','#F0805A','#26C0C0'
      ];
 
+    var Point = function(x,y){
+        this.x = x;
+        this.y = y;
+    }
+
+   
     //DrawTool 
     var DrawTool = {}
-    DrawTool.canvas = myCanvas;
-    DrawTool.ctx = context;
+    DrawTool.canvas = document.getElementById("canvas");
+    DrawTool.ctx = DrawTool.canvas.getContext("2d");
     DrawTool.iniCanvas = function(width=800,height=600){
         this.width = width;
         this.height = height;
@@ -50,11 +95,24 @@
          this.ctx.stroke();
     }
 
-
-
+    function queue(){
+         this.arr = [];
+    }
+    queue.prototype.enqueue = function(item){
+        if(addLen==0){
+            this.arr.length=0;
+        }
+        if(this.arr.length>addLen){
+            this.arr.shift();
+        }
+        this.arr.push(item);
+    }
+    queue.prototype.getArr = function(){
+          return this.arr;
+    }
 
     //Particle
-    function Particle(x=10,y=10,radius=10,vx=20,vy=30,mass=0.1,color){
+    function Particle(x=10,y=10,radius=10,vx=20,vy=30,mass=0.1,color="#000000"){
         this.x = x;
         this.y = y;
         this.radius = radius;
@@ -63,16 +121,141 @@
         this.mass = mass;
         this.color=color;
         this.count = 0;
+        this.trace = new queue();
     }
+    function dist(x1,y1,x2,y2){
+        return Math.sqrt((x1-x2)*(x1-x2) + (y1-y2)*(y1-y2))
+
+    }
+    Particle.prototype.drawTrace = function(){
+
+        // DrawTool.ctx.moveTo(this.trace[0])
+        var trace = this.trace.getArr();
+        for(var i=0,len=trace.length;i<len-2;i+=2){
+            // if(i==0){
+            //     // DrawTool.ctx.moveTo(trace[i].x,trace[i].y);
+            //     // DrawTool.drawCycle(trace[i].x,trace[i].y,this.radius*i/len*2,this.color);
+            // }else{
+                // DrawTool.ctx.lineTo(trace[i].x,trace[i].y);
+                if(i<len/1.2){
+                    var x_1 = trace[i].x;
+                    var y_1 = trace[i].y;
+                    // var x_2 = +20*Math.sin(trace[i].y)
+                    var x_2 = trace[i+1].x;
+                    var y_2 = trace[i+1].y;
+                    var x = (x_1+x_2)/2;
+                    var y = (y_1+y_2)/2;
+                     DrawTool.drawCycle(x,y+0*Math.sin(y),this.radius*i*0.5/len,this.color);
+                }else{
+                     DrawTool.drawCycle(trace[i].x,trace[i].y,this.radius*i*0.7/len,this.color);
+                }
+               
+            // }
+        }
+        DrawTool.ctx.lineWidth=0.5;
+        DrawTool.ctx.strokeStyle=this.color;
+        DrawTool.ctx.stroke();
+    }
+    Particle.prototype.u = 0.0;
     Particle.prototype.INFINITY = Number.POSITIVE_INFINITY;
+    
+
+    function rotate(vx,vy,x,y,x1,y1){
+         var length = Math.sqrt(vx*vx+vy*vy);
+         var cos = vx/length;
+         var sin = vy/length;
+         // var x1 = (x1-x)*cos - (y1-y)*sin + x;
+         // var y1 = (x1-x)*sin + (y1-y)*cos + y;
+         return [x1,y1];
+    }
+  
+
+    Particle.prototype.personalDraw = function(){
+              var gap = 0.001;
+              var x = this.x;
+              var y = this.y;
+              var vx = this.vx;
+              var vy = this.vy;
+              var r1 = 30;
+              var r2 = 120;
+              DrawTool.ctx.beginPath();
+              var arr = rotate(vx,vy,x,y-r1);
+              DrawTool.ctx.moveTo(arr[0],arr[1]);
+              for(var alpha = -Math.PI/2;alpha<=Math.PI/2;alpha+=gap){
+                     var x1 = x+r2*Math.cos(alpha);
+                     var y1 = y+r1*Math.sin(alpha);
+                     var arr = rotate(vx,vy,x,y,x1,y1);
+                     DrawTool.ctx.lineTo(arr[0],arr[1]);
+              }
+              for(var alpha = Math.PI/2;alpha<=Math.PI*5/6;alpha+=gap){
+                     var x1 = x+r1*Math.cos(alpha);
+                     var y1 = y+r1*Math.sin(alpha);
+                     var arr = rotate(vx,vy,x,y,x1,y1);
+                     DrawTool.ctx.lineTo(arr[0],arr[1]);
+              }
+              for(var alpha = -Math.PI*5/6;alpha<=-Math.PI/2;alpha+=gap){
+                     var x1 = x+r1*Math.cos(alpha);
+                     var y1 = y+r1*Math.sin(alpha);
+                     var arr = rotate(vx,vy,x,y,x1,y1);
+                     DrawTool.ctx.lineTo(arr[0],arr[1]);
+              }
+              DrawTool.ctx.closePath();
+              var colorObj = DrawTool.ctx.createRadialGradient(x+r2,y-r1/2,1,x,y,(r1+r2));
+              colorObj.addColorStop(0,"#FFF0EF");
+              colorObj.addColorStop(1,'#E87C25');
+              // DrawTool.ctx.fillStyle = '#E87C25';
+              DrawTool.ctx.fillStyle = colorObj;
+              DrawTool.ctx.translate(x, y);
+              DrawTool.ctx.rotate(10 * Math.PI/180);
+              DrawTool.ctx.fill();
+
+    }
     Particle.prototype.draw = function(){
-        DrawTool.ctx.fillStyle = this.color;
-        DrawTool.fillCycle(this.x,this.y,this.radius);
+        this.drawTrace();
+        DrawTool.drawCycle(this.x,this.y,this.radius,this.color);
+        // var colorObj = DrawTool.ctx.createRadialGradient(this.x-this.radius/1.8,this.y-this.radius/1.8,0,this.x,this.y,this.radius);
+        // colorObj.addColorStop(0,"#FFFFFF");
+        // colorObj.addColorStop(1,this.color);
+        // DrawTool.ctx.fillStyle = colorObj;
+        // // var radial = DrawTool.ctx.createRadialGradient(this.x+this.radius/2,this.y+this.radius/2,this.radius/3,this.x,this.y,this.radius);
+        // // radial.addColorStop(0,'#EE84AA');
+        // // radial.addColorStop(0.9,'#FF0188');  // 颜色值 #FF0188 == rgba(255,1,136,1)
+        // // radial.addColorStop(1,'rgba(255,1,136,0)');
+        // // DrawTool.ctx.fillStyle = radial;
+        // DrawTool.fillCycle(this.x,this.y,this.radius);
+        // DrawTool.ctx.fill();
+    }
+    DrawTool.drawCycle = function(x,y,radius,color){
+        var colorObj = DrawTool.ctx.createRadialGradient(x-radius/1.8,y-radius/1.8,0,x,y,radius);
+        colorObj.addColorStop(0,"#FFFFFF");
+        colorObj.addColorStop(1,color);
+        DrawTool.ctx.fillStyle = colorObj;
+        // var radial = DrawTool.ctx.createRadialGradient(this.x+this.radius/2,this.y+this.radius/2,this.radius/3,this.x,this.y,this.radius);
+        // radial.addColorStop(0,'#EE84AA');
+        // radial.addColorStop(0.9,'#FF0188');  // 颜色值 #FF0188 == rgba(255,1,136,1)
+        // radial.addColorStop(1,'rgba(255,1,136,0)');
+        // DrawTool.ctx.fillStyle = radial;
+        DrawTool.fillCycle(x,y,radius);
         DrawTool.ctx.fill();
     }
     Particle.prototype.move = function(dt){
-        this.x +=this.vx*dt;
-        this.y +=this.vy*dt;
+        var vx_change = 0.0; 
+        var vy_change = 0.0; 
+        if(this.vx<0){
+           vx_change = this.vx + this.u*dt;
+        }else if(this.vx>0){
+           vx_change = this.vx - this.u*dt;
+        }
+        if(this.vy<0){
+            vy_change = this.vy + this.u*dt;
+        }else if(this.vy>0){
+            vy_change = this.vy - this.u*dt;
+        }
+        this.x +=0.5*(vx_change+this.vx)*dt;
+        this.y +=0.5*(vy_change+this.vy)*dt;
+        this.vx = vx_change;
+        this.vy = vy_change;
+        this.trace.enqueue(new Point(this.x,this.y));
         // if(DrawTool.width<=this.x+this.radius || this.x<=this.radius){
         //     this.vx = -this.vx;
         // }
@@ -149,18 +332,42 @@
    //generate random particles 
     function  generateParticle(_radius,_vx,_vy,_mass){
         var radius = _radius+Math.random()*_radius;
-        var x = Math.random()*800;
-        var y = Math.random()*600;
+        var x = Math.random()*DrawTool.width;
+        var y = Math.random()*DrawTool.height;
         var vx = Math.random()*_vx;
         var vy = Math.random()*_vy;
-        var mass = (radius*0.1)*(radius*0.1)*(radius*0.1)
+        var mass = (radius*0.1)*(radius*0.1)*(radius*0.1)*_mass
         var color = colorList[Math.floor(Math.random()*colorList.length)];
         return new Particle(x,y,radius,vx,vy,mass,color);
     }
-
+    
+    function  generateGrp(n){
+        var arr = [];
+        for(var i=0;i<n;i++){
+            arr.push(generateParticle(10,2,5,1));
+        }
+         // DrawTool.ctx.arc(DrawTool.width,0,DrawTool.width/3,true)
+         var r = DrawTool.width/3;
+         for(var alpha=0;alpha<Math.PI/2;alpha+=Math.PI/2/6){
+             var x = DrawTool.width - r*Math.cos(alpha);
+             var y = r*Math.sin(alpha);
+             // alert(x);
+             // alert(y);
+             arr.push(new Particle(x,y,10,0,0,100000000,'#111111'));
+             // DrawTool.drawCycle(x,y,25,'#000000');
+         }
+         for(var vertical=10;vertical<DrawTool.height-10;vertical+=100){
+             arr.push(new Particle(DrawTool.width/2,vertical,10,0,0,100000000,'#111111'));
+         }
+         // arr.push(generateParticle(25,0,0,100000000));
+         // arr.push(generateParticle(25,0,0,100000000));
+         // arr.push(generateParticle(25,0,0,100000000));
+         // arr.push(generateParticle(25,0,0,100000000));
+        return arr;
+    }
 
     function  generateParticle_1(y){
-        var radius = 10;
+        var radius = 40;
         var x = radius;
         // var y = 300;
         var vx = 10;
@@ -170,7 +377,7 @@
         return new Particle(x,y,radius,vx,vy,mass,color);
     }
     function  generateParticle_2(y){
-        var radius = 80;
+        var radius = 40;
         var x = 400;
         // var y = 300;
         var vx = -1;
@@ -265,20 +472,16 @@
 
     // _radius,_vx,_vy,_mass,particlesNum
     // var particles =  getParticleGroup(50,10,10,30,1);
-     var particles = generateGrp_2();
+     // var particles = generateGrp_2();
 
 
 
-    var Point = function(x,y){
-        this.x = x;
-        this.y = y;
-    }
 
     //example draw picture
     function drawBox(){
     	 DrawTool.beginPath();
     	 var height = 600;
-		 var width = 800;
+		   var width = 800;
          DrawTool.iniCanvas(width,height);
          var columnNum = 80;
          var rowNum = 60;
@@ -321,42 +524,115 @@
     }
     
     //MinPQ
-    function MinPQ(){
-        var items = [];
-        this.insert = function(event){
-           var added = false;
-           for(var i=0;i<items.length;i++){
-             if(event.time<items[i].time){
-                items.splice(i,0,event);
-                added = true;
-                break;
-             }
-           }
-           if(!added){
-             items.push(event);
-           }
-        }
-        this.delMin = function(){
-            return items.shift();
-        }
-        this.isEmpty = function(){
-            return items.length == 0;
+    // function MinPQ(){
+    //     var items = [];
+    //     this.insert = function(event){
+    //        var added = false;
+    //        for(var i=0;i<items.length;i++){
+    //          if(event.time<items[i].time){
+    //             items.splice(i,0,event);
+    //             added = true;
+    //             break;
+    //          }
+    //        }
+    //        if(!added){
+    //          items.push(event);
+    //        }
+    //     }
+    //     this.delMin = function(){
+    //         return items.shift();
+    //     }
+    //     this.isEmpty = function(){
+    //         return items.length == 0;
+    //     }
+    // }
+function MinPQ(){
+  this.arr = [];
+  this.n = 0;
+  function item(priority,obj){
+         this.priority = priority;
+         this.obj = obj;
+  }
+  this.less = function(i,j){
+    return this.arr[i].priority<this.arr[j].priority;
+  }
+    
+    this.swap = function(i,j){
+       var tmp = this.arr[i];
+       this.arr[i] = this.arr[j];
+       this.arr[j] = tmp;
+    }
+    
+    this.swim = function(i){      
+        while(i>1){
+           var k = Math.floor(i/2);
+          //console.log(k);
+         if(this.less(k,i))break;
+           this.swap(k,i);
+           i = k;
         }
     }
+    this.sink = function(i){
+      while(i*2<=this.n){
+        var k = i*2;
+        if(k+1<=this.n && this.less(k+1,k))k++;
+        if(this.less(i,k))break;
+        this.swap(k,i);
+        i = k;
+      }
+    }
+    this.swim = function(i){
+        
+        while(i>1){
+             var k = Math.floor(i/2);
+             if(this.less(k,i))break;
+             this.swap(k,i);
+             i = k;
+        }
+    }
+    this.sink = function(i){
+        while(i*2<=this.n){
+            var k = i*2;
+            if(k+1<=this.n && this.less(k+1,k))k++;
+            if(this.less(i,k))break;
+            this.swap(k,i);
+            i = k;
+        }
+    }
+
+  this.insert = function(event){
+        this._insert(event.time,event);
+  }
+  this._insert = function(priority,obj){
+        var item_obj = new item(priority,obj);
+        this.n++;
+        this.arr[this.n]=item_obj;
+        this.swim(this.n);
+        // console.log(this.arr);
+  }
+  this.delMin = function(){
+    var item_obj = this.arr[1];
+    this.arr[1] = this.arr[this.n];
+    this.n--;
+    this.sink(1);
+    return item_obj.obj;
+  }
+  this.isEmpty = function(){
+    return this.n==0;
+  }
+}
+
    //sleep
 
-   function sleep(n){
-    var start=new Date().getTime();
-    while(true) if(new Date().getTime()-start>n) break;
-  }
-
     //CollisionSystem
-    CollisionSystem ={};
-    CollisionSystem.particles = particles;
-    CollisionSystem.pq = new MinPQ();
-    CollisionSystem.t = 0.0;
-    CollisionSystem.HZ = 0.5;
-    CollisionSystem.predict = function(a,limit){
+   function  CollisionSystem(particles,limit){
+        this.particles = particles;
+        this.pq = new MinPQ();
+        this.limit = limit;
+        this.t = 0.0;
+        this.HZ=0.5;
+    };
+    CollisionSystem.prototype.predict = function(a,limit){
          if(a == null)return;
          for(var i =0;i<this.particles.length;i++){
             var dt = a.timeToHit(this.particles[i]);
@@ -369,26 +645,26 @@
         if (this.t + dtX <= limit) this.pq.insert(new Event(this.t + dtX, a, null));
         if (this.t + dtY <= limit) this.pq.insert(new Event(this.t + dtY, null, a));
     }
-    CollisionSystem.redraw = function(limit){
+    CollisionSystem.prototype.redraw = function(){
         DrawTool.clear();
         for (var i = 0; i < this.particles.length; i++) {
             this.particles[i].draw();
         }
-        if (this.t < limit) {
+        if (this.t < this.limit) {
             this.pq.insert(new Event(this.t + 1.0 / this.HZ, null, null));
         }
     }
 
-    CollisionSystem.prepare = function(limit){
+    CollisionSystem.prototype.prepare = function(){
         for (var i = 0; i < this.particles.length; i++) {
-            this.predict(this.particles[i], limit);
+            this.predict(this.particles[i], this.limit);
         }
         this.pq.insert(new Event(0, null, null));        // redraw event
     }
 
 
 
-    CollisionSystem.simulate = function(limit) {
+    CollisionSystem.prototype.simulate = function() {
 
         // the main event-driven simulation loop
             if(!this.pq.isEmpty()) { 
@@ -409,33 +685,53 @@
                 else if (a != null && b == null) a.bounceOffVerticalWall();   // particle-wall collision
                 else if (a == null && b != null) b.bounceOffHorizontalWall(); // particle-wall collision
                 else if (a == null && b == null) {
-                this.redraw(limit);
+                this.redraw(this.limit);
                 }        // redraw event
 
                 // update the priority queue with new collisions involving a or b
-                this.predict(a, limit);
-                this.predict(b, limit);
+                this.predict(a, this.limit);
+                this.predict(b, this.limit);
             }
         }
     }
+   var timer = null;
 
-   function getNum(field){
-      var fieldVal = document.getElementById(field).value;
-         return 10;
- 
-      
+   function test(particles,limit){
+     if(timer!=null){
+        clearInterval(timer);
+      }
+      DrawTool.clear();
+      var sys  = new CollisionSystem(particles,limit);
+      sys.prepare(); 
+      timer = setInterval(function(){
+              sys.simulate();
+      },10);
    }
 
-
-
-
+  
+   function test1(){
+        test(generateGrp_2(),100000);
+   }
+   function test2(){
+         test(generateGrp_1(),100000);
+   }
+   function test3(){
+         test(generateGrp(10),100000);
+   }
+   function test4(){
+         addLen = 100;
+   }
+   function test5(){
+         addLen = 0;
+   }
+   // Particle(x=10,y=10,radius=10,vx=20,vy=30,mass=0.1,color="#000000")
+   function test6(){
+         var particle = new Particle(540,140,40,3,4,0.1,'#000000');
+         particle.personalDraw();
+   }
 
 	window.onload = function(){
 		   drawBox();
-           CollisionSystem.prepare(100000); 
-           setInterval(function(){
-              CollisionSystem.simulate(100000);
-           },10);
 	    }
 </script>
 </html>
